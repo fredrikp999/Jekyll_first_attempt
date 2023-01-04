@@ -21,15 +21,15 @@ register an A-record for something like local.MYDOMAIN.COM or l.MYDOMAIN.COM, po
 ## Install certbot on a local server, not exposed
 This is the recommended, more safe(?) alternative.
 On one server on the local network, install certbot
-Assuming DNS-provider is cloudflare, follow: https://labzilla.io/blog/cloudflare-certbot
+(Assuming DNS-provider is cloudflare below)
 
 In short:
 ### 1) Install certbot
 
 Follow: https://certbot.eff.org/instructions?ws=other&os=ubuntufocal
+in short:
 ```console
 sudo snap install core; sudo snap refresh core
-
 sudo apt-get install python3-certbot-dns-cloudflare
 sudo mkdir /root/.secrets/
 sudo touch /root/.secrets/cloudflare.ini
@@ -64,19 +64,37 @@ sudo chmod 0400 /root/.secrets/cloudflare.ini
 * Request "certificate only"
 
 ```console
-sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/cloudflare.ini -d example.com,*.example.com --preferred-challenges dns-01
+sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/cloudflare.ini -d example.com,*.example.com,*.l.example.com --preferred-challenges dns-01
  ```
+Note: *.l.example.com (or *.local.example.com if you prefer) is what will be used for local hosts and is what will make it possible to use real certs also for internal services / host names
+
 
 ### 6) Use the retrieved certificates
 If successfully received certificate.
 * Certificate is saved at: /etc/letsencrypt/live/zalfnet.com/fullchain.pem
 * Key is saved at: /etc/letsencrypt/live/zalfnet.com/privkey.pem
-* Note:
-* These files will be updated when the certificate renews.
-* Certbot has set up a scheduled task to automatically renew this certificate in the background.
+(Note: These files will be updated when the certificate renews. Certbot has set up a scheduled task to automatically renew this certificate in the background.)
+
+#### Example usage of certs on another server for (docker) registry:
+* create folder for certs
+* copy fullchain.pem and provkey.pem to ./certs
+* for simple test, use docker run
+```console
+docker run -d --restart=always --name registry -v "$(pwd)"/certs:/certs -e REGISTRY_HTTP_ADDR=0.0.0.0:443 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/fullchain.pem -e REGISTRY_HTTP_TLS_KEY=/certs/privkey.pem -p 443:443 registry:2
+```
+If service is on same server as the original pem-files, reference these instead.
+Also make sure to apply least privilage approach, lock down the access to the pem-files as much as possible
+
+### 7) Add DNS-entries to *.l.mydomain.com
+ * Simple approach: add A-record for each service. Either in local DNS or in /etc/hosts for easy tests
+ * Better approach: add wild-card A-record for *.l.mydomain.com to reverse proxy e.g. nginx or traefik
+
+### 8) Setup reverse proxy, traefik
+ * See separate post on details for traefik or nginx
+ * In short, the reverse proxy recieves all traffic to *.l.mydomain.com and routes traffic on either to different servers or to local docker containers using local docker-network. The proxy can also apply actions before forwarding the request, e.g. filtering or stripping paths etc.
 
 ## Notes
-The expiry date for the API-key is set when creating it in cloudflare. Take care when it expires. Also probably good to not make a too long expiry time if it is leaked
+The expiry date for the API-key is set when creating it in cloudflare. Take care when it expires, when the cloudflare.ini needs to be updated with new API-key (or API key extended) + cert requested again per #5 above
 
 ## Alternative: Set up server with port 80 exposed 
 Using a server in you DMZ which is isolated from the rest of the network, install certbot: https://certbot.eff.org/ and e.g. https://certbot.eff.org/instructions?ws=other&os=ubuntufocal
