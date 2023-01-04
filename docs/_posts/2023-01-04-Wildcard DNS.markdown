@@ -82,6 +82,39 @@ If successfully received certificate.
 ```console
 docker run -d --restart=always --name registry -v "$(pwd)"/certs:/certs -e REGISTRY_HTTP_ADDR=0.0.0.0:443 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/fullchain.pem -e REGISTRY_HTTP_TLS_KEY=/certs/privkey.pem -p 443:443 registry:2
 ```
+Or better, use docker-compose + authentication
+
+Create folders + Generate password and store in file
+```console
+mkdir data
+mkdir auth
+mkdir certs
+docker run --entrypoint htpasswd httpd:2 -Bbn yourusername yourpassword > auth/htpasswd
+```
+
+Create docker-compose.yaml
+```yaml
+registry:
+  restart: always
+  image: registry:2
+  ports:
+    - 5000:5000
+  environment:
+    REGISTRY_HTTP_TLS_CERTIFICATE: /certs/fullchain.pem
+    REGISTRY_HTTP_TLS_KEY: /certs/privkey.pem
+    REGISTRY_AUTH: htpasswd
+    REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+  volumes:
+    - ./data:/var/lib/registry
+    - ./certs:/certs
+    - ./auth:/auth
+```
+Start docker container (detached)
+```console
+docker-compose up -d
+```
+
 If service is on same server as the original pem-files, reference these instead.
 Also make sure to apply least privilage approach, lock down the access to the pem-files as much as possible
 
