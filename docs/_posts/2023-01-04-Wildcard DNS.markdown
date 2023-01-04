@@ -114,6 +114,11 @@ Start docker container (detached)
 ```console
 docker-compose up -d
 ```
+Now login from somewhere where you want to use this docker registry
+```console
+docker login registry.l.example.com:5000
+```
+(enter username and password)
 
 If service is on same server as the original pem-files, reference these instead.
 Also make sure to apply least privilage approach, lock down the access to the pem-files as much as possible
