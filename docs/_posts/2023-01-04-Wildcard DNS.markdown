@@ -2,7 +2,7 @@
 layout: post
 title:  "Wildcard DNS on local services"
 date:   2023-01-04 11:00:10 +0000
-categories: DNS homelab
+categories: DNS homelab cloudflare certbot
 ---
 
 # Introduction
@@ -15,7 +15,7 @@ Purpose is to enable using proper certificates inside the homelab. This is solve
 # Register wildcard DNS at DNS-provider
 If using cloudflare, see: https://developers.cloudflare.com/dns/manage-dns-records/reference/wildcard-dns-records/
 
-register an A-record for something like local.MYDOMAIN.COM or l.MYDOMAIN.COM, pointing to your fixed IP (if having dynamic IP, set that up)
+register an A-record for something like local.EXAMPLE.COM or l.EXAMPLE.COM, pointing to your fixed IP (if having dynamic IP, set that up)
 
 # Prove you are the owner or the domain using certbot
 ## Install certbot on a local server, not exposed
@@ -71,8 +71,8 @@ Note: *.l.example.com (or *.local.example.com if you prefer) is what will be use
 
 ### 6) Use the retrieved certificates
 If successfully received certificate.
-* Certificate is saved at: /etc/letsencrypt/live/zalfnet.com/fullchain.pem
-* Key is saved at: /etc/letsencrypt/live/zalfnet.com/privkey.pem
+* Certificate is saved at: /etc/letsencrypt/live/example.com/fullchain.pem
+* Key is saved at: /etc/letsencrypt/live/example.com/privkey.pem
 (Note: These files will be updated when the certificate renews. Certbot has set up a scheduled task to automatically renew this certificate in the background.)
 
 #### Example usage of certs on another server for (docker) registry:
@@ -87,11 +87,11 @@ Also make sure to apply least privilage approach, lock down the access to the pe
 
 ### 7) Add DNS-entries to *.l.mydomain.com
  * Simple approach: add A-record for each service. Either in local DNS or in /etc/hosts for easy tests
- * Better approach: add wild-card A-record for *.l.mydomain.com to reverse proxy e.g. nginx or traefik
+ * Better approach: add wild-card A-record for *.l.example.com to reverse proxy e.g. nginx or traefik
 
 ### 8) Setup reverse proxy, traefik
  * See separate post on details for traefik or nginx
- * In short, the reverse proxy recieves all traffic to *.l.mydomain.com and routes traffic on either to different servers or to local docker containers using local docker-network. The proxy can also apply actions before forwarding the request, e.g. filtering or stripping paths etc.
+ * In short, the reverse proxy recieves all traffic to *.l.example.com and routes traffic on either to different servers or to local docker containers using local docker-network. The proxy can also apply actions before forwarding the request, e.g. filtering or stripping paths etc.
 
 ## Notes
 The expiry date for the API-key is set when creating it in cloudflare. Take care when it expires, when the cloudflare.ini needs to be updated with new API-key (or API key extended) + cert requested again per #5 above
