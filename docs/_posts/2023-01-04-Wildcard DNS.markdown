@@ -120,6 +120,23 @@ docker login registry.l.example.com:5000
 ```
 (enter username and password)
 
+Verify that you can access the registry. First get the catalogue, then the available tags for the ubuntu image
+```console
+curl -u youruser:yourpass https://l.example.com:5000/v2/_catalog
+curl -u youruser:yourpass https://l.example.com:5000/v2/ubuntu/tags/list
+```
+
+Now try pushing and pulling images. First build or pull an image to your local docker, then tag it for the new local registry and push it
+```console
+docker pull ubuntu:16.04
+docker tag ubuntu:16.04 registry.l.example.com/my-ubuntu:1.0
+docker push ubuntu:16.04 registry.l.example.com/my-ubuntu:1.0
+```
+NOTE: This is not working yet, I get following error message:
+* Get "https://registry.l.example.com/v2/": x509: certificate is not valid for any names, but wanted to match registry.l.example.com
+To be sorted out. Strange as login + curl is working fine with https + fails when cert does not match hostname
+
+
 If service is on same server as the original pem-files, reference these instead.
 Also make sure to apply least privilage approach, lock down the access to the pem-files as much as possible
 
